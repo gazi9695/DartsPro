@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>DartsPro needs camera access to track your throwing motion and provide real-time feedback on your technique.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>DartsPro can record audio with your practice videos for review.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>DartsPro needs photo library access to save and import practice videos for AI analysis.</string>
+</dict>
+</plist>
