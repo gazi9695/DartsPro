@@ -56,25 +56,26 @@ final class RecordingService {
         // Create asset writer
         assetWriter = try AVAssetWriter(outputURL: url, fileType: .mp4)
         
-        // Video settings
+        // Video settings - optimized for performance (720p)
         let videoSettings: [String: Any] = [
             AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: 1080,
-            AVVideoHeightKey: 1920,
+            AVVideoWidthKey: 720,
+            AVVideoHeightKey: 1280,
             AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: 6_000_000,
-                AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel
+                AVVideoAverageBitRateKey: 2_500_000, // 2.5 Mbps
+                AVVideoProfileLevelKey: AVVideoProfileLevelH264Main31,
+                AVVideoExpectedSourceFrameRateKey: 30
             ]
         ]
         
         videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
         videoInput?.expectsMediaDataInRealTime = true
         
-        // Pixel buffer adaptor for efficient writing
+        // Pixel buffer adaptor for efficient writing (720p)
         let sourcePixelBufferAttributes: [String: Any] = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-            kCVPixelBufferWidthKey as String: 1080,
-            kCVPixelBufferHeightKey as String: 1920
+            kCVPixelBufferWidthKey as String: 720,
+            kCVPixelBufferHeightKey as String: 1280
         ]
         
         pixelBufferAdaptor = AVAssetWriterInputPixelBufferAdaptor(

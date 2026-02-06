@@ -13,16 +13,16 @@ struct MainTabView: View {
     
     enum Tab: String, CaseIterable {
         case home = "Home"
-        case practice = "Practice"
         case library = "Library"
+        case practice = "Practice"
         case progress = "Progress"
         case settings = "Settings"
         
         var icon: String {
             switch self {
             case .home: return "house.fill"
-            case .practice: return "camera.fill"
             case .library: return "play.rectangle.fill"
+            case .practice: return "camera.fill"
             case .progress: return "chart.line.uptrend.xyaxis"
             case .settings: return "gearshape.fill"
             }
@@ -31,8 +31,8 @@ struct MainTabView: View {
         var color: Color {
             switch self {
             case .home: return .dartsTextPrimary
-            case .practice: return .dartsRed
             case .library: return .dartsGreen
+            case .practice: return .dartsRed
             case .progress: return .dartsRed
             case .settings: return .dartsTextPrimary
             }
@@ -47,7 +47,9 @@ struct MainTabView: View {
                 case .home:
                     HomeView()
                 case .practice:
-                    LiveTrackingView()
+                    LiveTrackingView(onClose: {
+                        selectedTab = .home
+                    })
                 case .library:
                     VideoLibraryView()
                 case .progress:
@@ -58,8 +60,10 @@ struct MainTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Custom tab bar
-            customTabBar
+            // Custom tab bar - hide during practice
+            if selectedTab != .practice {
+                customTabBar
+            }
         }
         .ignoresSafeArea(edges: .bottom)
     }
@@ -74,7 +78,7 @@ struct MainTabView: View {
         }
         .padding(.horizontal, 8)
         .padding(.top, 8)
-        .padding(.bottom, 12)
+        .padding(.bottom, 17)
         .frame(maxWidth: .infinity)
         .background(
             Color.dartsCardBackground

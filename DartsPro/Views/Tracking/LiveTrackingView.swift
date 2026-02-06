@@ -14,6 +14,9 @@ struct LiveTrackingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
+    /// Called when the user closes the view via X button
+    var onClose: (() -> Void)? = nil
+    
     @State private var cameraService = CameraService()
     @State private var visionService = VisionService()
     @State private var recordingService = RecordingService()
@@ -27,6 +30,11 @@ struct LiveTrackingView: View {
     @State private var throwCount = 0
     @State private var totalElbowAngle: Double = 0
     @State private var angleReadings = 0
+    
+    // Saving state
+    @State private var isSaving = false
+    @State private var savedSession: RecordedSession?
+    @State private var showingReview = false
     
     var body: some View {
         ZStack {
@@ -66,6 +74,11 @@ struct LiveTrackingView: View {
                 // Record button and metrics
                 bottomControls
             }
+            
+            // Saving overlay
+            if isSaving {
+                savingOverlay
+            }
         }
         .onAppear {
             setupCamera()
@@ -76,6 +89,38 @@ struct LiveTrackingView: View {
                 recordingService.stopRecording()
             }
             cameraService.stopSession()
+        }
+        .fullScreenCover(isPresented: $showingReview) {
+            if let session = savedSession {
+                SessionReviewView(session: session) {
+                    // Reset state when done
+                    showingReview = false
+                    savedSession = nil
+                    elapsedTime = 0
+                }
+            }
+        }
+    }
+    
+    // MARK: - Saving Overlay
+    
+    private var savingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.7)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 16) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.dartsRed)
+                
+                Text("Saving Session...")
+                    .font(.dartsSubheadline)
+                    .foregroundColor(.dartsTextPrimary)
+            }
+            .padding(32)
+            .background(Color.dartsCardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
     
@@ -88,7 +133,12 @@ struct LiveTrackingView: View {
                 if recordingService.isRecording {
                     recordingService.stopRecording()
                 }
-                dismiss()
+                // Use onClose callback if provided, otherwise dismiss
+                if let onClose = onClose {
+                    onClose()
+                } else {
+                    dismiss()
+                }
             }) {
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .medium))
@@ -257,11 +307,13 @@ struct LiveTrackingView: View {
         }
         
         recordingService.onRecordingFinished = { url in
+            isSaving = true
             saveSession(videoURL: url)
         }
         
         recordingService.onRecordingFailed = { error in
             print("Recording failed: \(error.localizedDescription)")
+            isSaving = false
         }
     }
     
@@ -281,6 +333,9 @@ struct LiveTrackingView: View {
             
             await MainActor.run {
                 modelContext.insert(session)
+                savedSession = session
+                isSaving = false
+                showingReview = true
             }
         }
     }
@@ -333,6 +388,12 @@ struct LiveTrackingView: View {
         Task {
             await cameraService.checkPermission()
             cameraService.delegate = visionService
+            
+            // Pass frames to recording service when recording
+            cameraService.onFrameOutput = { [weak recordingService] sampleBuffer in
+                recordingService?.processVideoFrame(sampleBuffer)
+            }
+            
             cameraService.startSession()
         }
     }

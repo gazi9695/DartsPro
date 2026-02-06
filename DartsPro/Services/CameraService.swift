@@ -26,6 +26,9 @@ final class CameraService: NSObject {
     
     weak var delegate: CameraServiceDelegate?
     
+    /// Additional frame handler for recording (called in addition to delegate)
+    var onFrameOutput: ((CMSampleBuffer) -> Void)?
+    
     var isSessionRunning = false
     var cameraPermissionGranted = false
     var previewLayer: AVCaptureVideoPreviewLayer?
@@ -73,7 +76,7 @@ final class CameraService: NSObject {
             guard let self = self else { return }
             
             self.captureSession.beginConfiguration()
-            self.captureSession.sessionPreset = .high
+            self.captureSession.sessionPreset = .hd1280x720 // Optimized for performance
             
             // Add video input
             guard let videoDevice = self.getCamera(for: self.currentCameraPosition),
@@ -183,5 +186,6 @@ final class CameraService: NSObject {
 extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         delegate?.cameraService(self, didOutput: sampleBuffer)
+        onFrameOutput?(sampleBuffer)
     }
 }

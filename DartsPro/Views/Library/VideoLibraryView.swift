@@ -57,48 +57,52 @@ struct VideoLibraryView: View {
     // MARK: - Sessions List
     
     private var sessionsList: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                // Header
-                HStack {
-                    Text("Your Sessions")
-                        .font(.dartsTitle)
-                        .foregroundColor(.dartsTextPrimary)
-                    
-                    Spacer()
-                    
-                    Text("\(sessions.count) videos")
-                        .font(.dartsCaption)
-                        .foregroundColor(.dartsTextSecondary)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Your Sessions")
+                    .font(.dartsTitle)
+                    .foregroundColor(.dartsTextPrimary)
                 
-                // Sessions grid
-                LazyVStack(spacing: 12) {
-                    ForEach(sessions) { session in
-                        SessionCard(session: session)
-                            .onTapGesture {
-                                selectedSession = session
-                                showingPlayer = true
-                            }
-                            .contextMenu {
-                                Button(role: .destructive) {
-                                    deleteSession(session)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
+                Spacer()
+                
+                Text("\(sessions.count) videos")
+                    .font(.dartsCaption)
+                    .foregroundColor(.dartsTextSecondary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 60)
+            .padding(.bottom, 16)
+            
+            // Sessions list with swipe
+            List {
+                ForEach(sessions) { session in
+                    SessionCard(session: session)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                        .onTapGesture {
+                            selectedSession = session
+                            showingPlayer = true
+                        }
+                }
+                .onDelete { indexSet in
+                    for index in indexSet {
+                        deleteSession(sessions[index])
                     }
                 }
-                .padding(.horizontal, 20)
-                
-                Spacer(minLength: 120)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
         .fullScreenCover(isPresented: $showingPlayer) {
             if let session = selectedSession {
-                VideoPlayerView(session: session)
+                VideoPlaybackView(session: session, onDelete: {
+                    if let session = selectedSession {
+                        deleteSession(session)
+                    }
+                    showingPlayer = false
+                })
             }
         }
     }

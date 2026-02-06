@@ -25,6 +25,38 @@ struct DetectedPose: Sendable {
     var neck: CGPoint? { bodyPoints[.neck] }
     var root: CGPoint? { bodyPoints[.root] } // Hip center
     
+    /// Initialize from VNHumanBodyPoseObservation
+    init(from observation: VNHumanBodyPoseObservation) {
+        var points: [VNHumanBodyPoseObservation.JointName: CGPoint] = [:]
+        
+        let jointNames: [VNHumanBodyPoseObservation.JointName] = [
+            .nose, .neck, .root,
+            .rightShoulder, .rightElbow, .rightWrist,
+            .leftShoulder, .leftElbow, .leftWrist,
+            .rightHip, .rightKnee, .rightAnkle,
+            .leftHip, .leftKnee, .leftAnkle,
+            .rightEye, .leftEye, .rightEar, .leftEar
+        ]
+        
+        for jointName in jointNames {
+            if let point = try? observation.recognizedPoint(jointName),
+               point.confidence > 0.3 {
+                // Vision coordinates are normalized (0-1) with origin at bottom-left
+                // Convert to top-left origin for display
+                points[jointName] = CGPoint(x: point.location.x, y: 1 - point.location.y)
+            }
+        }
+        
+        self.bodyPoints = points
+        self.confidence = observation.confidence
+    }
+    
+    /// Standard initializer
+    init(bodyPoints: [VNHumanBodyPoseObservation.JointName: CGPoint], confidence: Float) {
+        self.bodyPoints = bodyPoints
+        self.confidence = confidence
+    }
+    
     /// Calculate elbow angle for the throwing arm (right by default)
     func calculateElbowAngle(isRightHanded: Bool = true) -> Double? {
         let shoulder = isRightHanded ? rightShoulder : leftShoulder
@@ -70,7 +102,7 @@ final class VisionService {
     @ObservationIgnored
     private var frameCount = 0
     @ObservationIgnored
-    private let processEveryNthFrame = 2 // Process every 2nd frame for performance
+    private let processEveryNthFrame = 4 // Process every 4th frame for performance (~7.5fps)
     
     // MARK: - Body Pose Request
     
